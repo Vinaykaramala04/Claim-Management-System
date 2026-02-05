@@ -92,6 +92,75 @@ namespace ClaimsManagement.API.Controllers
             }
         }
 
+        [HttpGet("analytics/team/stats")]
+        [Authorize(Roles = "Manager,Admin")]
+        public async Task<IActionResult> GetTeamStats()
+        {
+            try
+            {
+                var allClaims = await _claimRepository.GetAllAsync();
+                var allUsers = await _userRepository.GetAllAsync();
+
+                var totalClaims = allClaims.Count();
+                var approvedClaims = allClaims.Count(c => c.Status == ClaimsManagement.DataAccess.Enum.ClaimStatus.Approved);
+                var totalProcessingDays = allClaims.Where(c => c.Status == ClaimsManagement.DataAccess.Enum.ClaimStatus.Approved && c.UpdatedAt.HasValue)
+                    .Sum(c => (c.UpdatedAt.Value - c.CreatedAt).TotalDays);
+                var approvedClaimsCount = allClaims.Count(c => c.Status == ClaimsManagement.DataAccess.Enum.ClaimStatus.Approved);
+
+                var teamStats = new
+                {
+                    totalTeamMembers = allUsers.Count(u => u.Role == ClaimsManagement.DataAccess.Enum.UserRole.Employee),
+                    totalClaims = totalClaims,
+                    avgApprovalRate = totalClaims > 0 ? Math.Round((double)approvedClaims / totalClaims * 100, 1) : 0,
+                    avgProcessingTime = approvedClaimsCount > 0 ? Math.Round(totalProcessingDays / approvedClaimsCount, 1) : 0
+                };
+
+                return Ok(teamStats);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("analytics/team/members")]
+        [Authorize(Roles = "Manager,Admin")]
+        public async Task<IActionResult> GetTeamMembers()
+        {
+            try
+            {
+                var allClaims = await _claimRepository.GetAllAsync();
+                var employees = await _userRepository.GetAllAsync();
+                var employeeUsers = employees.Where(u => u.Role == ClaimsManagement.DataAccess.Enum.UserRole.Employee).ToList();
+
+                var teamMembers = employeeUsers.Select(user => {
+                    var userClaims = allClaims.Where(c => c.UserId == user.UserId).ToList();
+                    var approvedClaims = userClaims.Count(c => c.Status == ClaimsManagement.DataAccess.Enum.ClaimStatus.Approved);
+                    var pendingClaims = userClaims.Count(c => c.Status == ClaimsManagement.DataAccess.Enum.ClaimStatus.Submitted || 
+                                                              c.Status == ClaimsManagement.DataAccess.Enum.ClaimStatus.UnderReview);
+                    var totalProcessingDays = userClaims.Where(c => c.Status == ClaimsManagement.DataAccess.Enum.ClaimStatus.Approved && c.UpdatedAt.HasValue)
+                        .Sum(c => (c.UpdatedAt.Value - c.CreatedAt).TotalDays);
+                    var approvedCount = userClaims.Count(c => c.Status == ClaimsManagement.DataAccess.Enum.ClaimStatus.Approved);
+
+                    return new {
+                        id = user.UserId,
+                        name = $"{user.FirstName} {user.LastName}",
+                        totalClaims = userClaims.Count,
+                        approvedClaims = approvedClaims,
+                        pendingClaims = pendingClaims,
+                        totalAmount = userClaims.Sum(c => c.Amount),
+                        avgProcessingTime = approvedCount > 0 ? Math.Round(totalProcessingDays / approvedCount, 1) : 0
+                    };
+                }).ToList();
+
+                return Ok(teamMembers);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
         [HttpGet("user-stats/{userId}")]
         [Authorize(Roles = "Manager,Admin")]
         public async Task<IActionResult> GetUserStats(int userId)

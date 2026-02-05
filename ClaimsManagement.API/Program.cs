@@ -117,7 +117,7 @@ if (app.Environment.IsDevelopment())
 }
 
 // Add Global Exception Middleware
-// app.UseMiddleware<GlobalExceptionMiddleware>(); // Temporarily disabled
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.UseHttpsRedirection();
 

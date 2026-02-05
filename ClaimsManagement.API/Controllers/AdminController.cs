@@ -92,7 +92,7 @@ namespace ClaimsManagement.API.Controllers
                     }
                     catch
                     {
-                        // Skip if user already exists
+                        
                         continue;
                     }
                 }
@@ -110,7 +110,7 @@ namespace ClaimsManagement.API.Controllers
         {
             try
             {
-                // Get real data from repositories
+                
                 var allClaims = await _claimRepository.GetAllAsync();
                 var allUsers = await _userRepository.GetAllAsync();
 

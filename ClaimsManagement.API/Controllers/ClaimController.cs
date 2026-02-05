@@ -85,7 +85,7 @@ namespace ClaimsManagement.API.Controllers
                 var userId = GetCurrentUserId();
                 var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
                 
-                // Additional role-based validation
+                
                 if (request.Status == ClaimStatus.Approved && userRole != "Manager" && userRole != "Admin")
                 {
                     return Forbid("Only Managers and Admins can approve claims");

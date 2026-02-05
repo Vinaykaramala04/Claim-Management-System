@@ -34,6 +34,7 @@ namespace ClaimsManagement.Business.Extensions
             services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<IAuditService, AuditService>();
             services.AddScoped<IDocumentValidationService, DocumentValidationService>();
+            services.AddScoped<IChatbotService, ChatbotService>();
             
             return services;
         }
